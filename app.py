@@ -1,125 +1,122 @@
 from flask import Flask, jsonify
 import os
 import threading
-import requests
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
 
 app = Flask(__name__)
 
-# تمكين التسجيل
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# ========== وظائف بوت تلجرام ==========
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """رد على أمر /start"""
-    user = update.effective_user
-    await update.message.reply_text(
-        f"🎉 **مرحباً {user.first_name}!**\n\n"
-        "أهلاً بك في بوت الاختبارات التعليمية!\n\n"
-        "✅ **البوت يعمل بنجاح الآن!**\n\n"
-        "👨‍🏫 **للمدرسين:**\n"
-        "- إنشاء اختبارات\n- رؤية النتائج\n\n"
-        "👨‍🎓 **للطلاب:**\n"
-        "- أداء الاختبارات\n- رؤية الدرجات\n\n"
-        "🚀 ابدأ باستخدام الأزرار!"
-    )
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """رد على أمر /help"""
-    await update.message.reply_text(
-        "🆘 **مساعدة سريعة:**\n\n"
-        "• /start - بدء البوت\n"
-        "• /help - هذه الرسالة\n"
-        "• /quiz - قريباً: الاختبارات\n\n"
-        "📞 للمساعدة: @دعم_البوت"
-    )
-
-def run_telegram_bot():
-    """تشغيل بوت تلجرام في خيط منفصل"""
-    try:
-        token = os.getenv('BOT_TOKEN')
-        
-        if not token:
-            logger.error("❌ BOT_TOKEN غير مضبوط!")
-            return
-        
-        logger.info("🤖 بدء تشغيل بوت تلجرام...")
-        
-        # اختبار التوكن أولاً
-        test_url = f"https://api.telegram.org/bot{token}/getMe"
-        response = requests.get(test_url, timeout=10)
-        
-        if not response.json().get('ok'):
-            logger.error(f"❌ التوكن خاطئ: {response.json()}")
-            return
-        
-        logger.info("✅ التوكن صحيح، جاري تشغيل البوت...")
-        
-        # إنشاء وتشغيل البوت
-        application = Application.builder().token(token).build()
-        application.add_handler(CommandHandler("start", start_command))
-        application.add_handler(CommandHandler("help", help_command))
-        
-        logger.info("✅ البوت يعمل وجاهز للرسائل!")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
-        
-    except Exception as e:
-        logger.error(f"❌ خطأ في البوت: {e}")
-
-# ========== صفحات الويب ==========
+# ========== الصفحات الأساسية ==========
 @app.route('/')
 def home():
     return """
     <!DOCTYPE html>
-    <html>
-    <head><title>Telegram Quiz Bot</title><meta charset="utf-8">
-    <style>body{font-family:Arial; padding:40px; text-align:center;}
-    .success{background:#4CAF50; color:white; padding:20px; border-radius:10px;}
-    </style></head>
-    <body>
-        <div class="success">
-            <h1>✅ البوت يعمل بنجاح!</h1>
-            <p>الخدمة: quiz-bot-final-q6sq.onrender.com</p>
-            <p>اذهب إلى Telegram وجرب:</p>
-            <p><strong>@banktest22bot</strong></p>
-            <p>وأرسل: <code>/start</code></p>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>بوت الاختبارات</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+        .status { padding: 15px; margin: 20px 0; border-radius: 8px; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .bot-link { display: inline-block; background: #25D366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; margin: 15px; font-size: 18px; }
+        .telegram-btn { background: #0088cc; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; margin: 10px; display: inline-block; }
+        code { background: #f8f9fa; padding: 5px 10px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 بوت الاختبارات التعليمية</h1>
+        
+        <div class="status success">
+            ✅ <strong>الخدمة تعمل بنجاح!</strong>
         </div>
-        <p><a href="/bot-status">📊 حالة البوت</a></p>
-    </body>
-    </html>
+        
+        <div class="status info">
+            <p>🔗 رابط الخدمة: <code>quiz-bot-final-q6sq.onrender.com</code></p>
+            <p>🤖 بوت Telegram: <strong>@banktest22bot</strong></p>
+        </div>
+        
+        <h3>🚀 خطوات التشغيل:</h3>
+        <ol style="text-align: right; margin: 20px auto; width: 300px;">
+            <li>افتح Telegram</li>
+            <li>ابحث عن <strong>@banktest22bot</strong></li>
+            <li>أرسل <code>/start</code></li>
+            <li>استلم رسالة الترحيب!</li>
+        </ol>
+        
+        <div>
+            <a href="https://t.me/banktest22bot" class="telegram-btn" target="_blank">
+                📲 افتح البوت على Telegram
+            </a>
+            <a href="/bot-status" class="bot-link">
+                📊 حالة البوت
+            </a>
+        </div>
+        
+        <p style="margin-top: 30px; color: #666;">
+            إذا لم يعمل البوت، تحقق من <code>BOT_TOKEN</code> في إعدادات Render
+        </p>
+    </div>
+</body>
+</html>
     """
 
 @app.route('/bot-status')
 def bot_status():
-    """صفحة لعرض حالة البوت"""
     token = os.getenv('BOT_TOKEN')
-    status = "❌ غير مفعل"
-    
-    if token:
-        try:
-            response = requests.get(f'https://api.telegram.org/bot{token}/getMe', timeout=5)
-            if response.json().get('ok'):
-                status = "✅ يعمل وجاهز"
-        except:
-            status = "⚠️ خطأ في الاتصال"
-    
     return jsonify({
-        "bot": "@banktest22bot",
-        "status": status,
-        "service": "quiz-bot-final-q6sq.onrender.com"
+        "service": "running",
+        "bot_token_set": "✅ نعم" if token else "❌ لا",
+        "next_step": "تحقق من BOT_TOKEN في Render" if not token else "البوت جاهز"
     })
 
-# ========== بدء التشغيل ==========
+# ========== بدء البوت بعد التأكد من المكتبات ==========
+def start_bot_after_import():
+    """بدء البوت بعد استيراد المكتبات المطلوبة"""
+    try:
+        # حاول استيراد المكتبات أولاً
+        import requests
+        from telegram import Update
+        from telegram.ext import Application, CommandHandler, ContextTypes
+        
+        token = os.getenv('BOT_TOKEN')
+        if not token:
+            logging.error("BOT_TOKEN غير مضبوط")
+            return
+        
+        # اختبار التوكن
+        test = requests.get(f'https://api.telegram.org/bot{token}/getMe', timeout=5)
+        if test.json().get('ok'):
+            print(f"✅ التوكن صحيح! البوت: {test.json()['result']['username']}")
+            
+            # تشغيل البوت
+            async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+                await update.message.reply_text('🎉 البوت يعمل! مرحباً!')
+            
+            app = Application.builder().token(token).build()
+            app.add_handler(CommandHandler("start", start))
+            print("🤖 بدء استماع البوت للرسائل...")
+            app.run_polling()
+            
+    except ImportError as e:
+        print(f"❌ مكتبة ناقصة: {e}. أضفها إلى requirements.txt")
+    except Exception as e:
+        print(f"❌ خطأ: {e}")
+
+# بدء البوت في الخلفية
 if __name__ == '__main__':
-    # تشغيل بوت تلجرام في الخلفية
-    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-    bot_thread.start()
-    logger.info("🚀 بدء تشغيل البوت في الخلفية...")
+    # حاول تشغيل البوت في thread منفصل
+    try:
+        bot_thread = threading.Thread(target=start_bot_after_import, daemon=True)
+        bot_thread.start()
+        print("🚀 بدء محاولة تشغيل البوت...")
+    except:
+        print("⚠️ لم يبدأ البوت بعد. تحقق من المكتبات.")
     
-    # تشغيل خادم Flask
+    # تشغيل Flask
     port = int(os.getenv('PORT', 10000))
-    logger.info(f"🌐 بدء خادم الويب على المنفذ {port}")
+    print(f"🌐 بدء خادم الويب على المنفذ {port}")
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
