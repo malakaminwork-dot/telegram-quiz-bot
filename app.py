@@ -1,18 +1,46 @@
 from flask import Flask, jsonify
 import os
 import sys
-import threading
-import asyncio
+import subprocess
+import time
 
 app = Flask(__name__)
 
-# ========== تشغيل بوت Telegram ==========
-async def run_telegram_bot_async():
-    """تشغيل البوت باستخدام asyncio"""
+# ========== تثبيت المكتبات المطلوبة ==========
+def install_telegram_bot():
+    """تثبيت مكتبة python-telegram-bot إذا كانت ناقصة"""
+    print("🔍 فحص مكتبات Python...")
+    
     try:
-        print("🤖 جاري تحميل مكتبات Telegram...")
+        # محاولة استيراد المكتبة
+        import telegram
+        print("✅ مكتبة telegram مثبتة بالفعل")
+        return True
+    except ImportError:
+        print("📦 جاري تثبيت python-telegram-bot...")
+        try:
+            # تثبيت المكتبة
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot==20.7", "requests==2.31.0"])
+            print("✅ تم تثبيت المكتبات بنجاح")
+            return True
+        except Exception as e:
+            print(f"❌ فشل تثبيت المكتبات: {e}")
+            return False
+
+# تثبيت المكتبات عند البدء
+install_telegram_bot()
+
+# ========== تشغيل بوت Telegram ==========
+def start_telegram_bot():
+    """بدء تشغيل بوت Telegram بعد تثبيت المكتبات"""
+    print("🤖 محاولة تشغيل بوت Telegram...")
+    time.sleep(3)  # انتظار للتثبيت
+    
+    try:
+        # الآن حاول استيراد المكتبات بعد التثبيت
         from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
         from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+        import asyncio
         
         token = os.getenv('BOT_TOKEN')
         if not token:
@@ -21,167 +49,83 @@ async def run_telegram_bot_async():
         
         print(f"✅ التوكن: {token[:10]}...")
         
-        # ========== جميع دوال الرد ==========
-        
-        # أمر /start
+        # دالة /start
         async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            user = update.effective_user
-            
-            # إنشاء أزرار
-            keyboard = [
-                [InlineKeyboardButton("👨‍🏫 أنا مدرس", callback_data='teacher_mode')],
-                [InlineKeyboardButton("👨‍🎓 أنا طالب", callback_data='student_mode')],
-                [InlineKeyboardButton("❓ المساعدة", callback_data='help_info')]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
             await update.message.reply_text(
-                f"🎓 **مرحباً {user.first_name}!**\n\n"
-                "أهلاً بك في نظام الاختبارات التعليمية الذكي\n\n"
-                "اختر هويتك للبدء:",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
+                "🎉 **مرحباً! البوت يعمل الآن!**\n\n"
+                "✨ **الأوامر المتاحة:**\n"
+                "• /start - بدء البوت\n"
+                "• /teacher - وضع المدرس\n"
+                "• /student - وضع الطالب\n"
+                "• /help - المساعدة\n\n"
+                "🚀 جرب الآن!"
             )
         
-        # أمر /teacher
+        # دالة /teacher
         async def teacher_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            user = update.effective_user
-            
-            keyboard = [
-                [InlineKeyboardButton("📝 إنشاء اختبار جديد", callback_data='create_quiz')],
-                [InlineKeyboardButton("📋 الاختبارات الحالية", callback_data='my_quizzes')],
-                [InlineKeyboardButton("📊 نتائج الطلاب", callback_data='student_results')],
-                [InlineKeyboardButton("🔙 رجوع", callback_data='back_to_start')]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
             await update.message.reply_text(
-                f"👨‍🏫 **مرحباً أستاذ {user.first_name}!**\n\n"
-                "**لوحة تحكم المدرس**\n\n"
-                "اختر المهمة التي تريد تنفيذها:",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
+                "👨‍🏫 **وضع المدرس**\n\n"
+                "مميزات المدرس:\n"
+                "1. 📝 إنشاء اختبارات جديدة\n"
+                "2. 📋 إدارة الاختبارات\n"
+                "3. 📊 رؤية نتائج الطلاب\n\n"
+                "🚀 سيتم تفعيل هذه المميزات قريباً!"
             )
         
-        # أمر /student
+        # دالة /student
         async def student_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            user = update.effective_user
-            
-            keyboard = [
-                [InlineKeyboardButton("📝 الاختبارات المتاحة", callback_data='available_quizzes')],
-                [InlineKeyboardButton("🏆 نتائجي", callback_data='my_results')],
-                [InlineKeyboardButton("🔍 بحث عن اختبار", callback_data='search_quiz')],
-                [InlineKeyboardButton("🔙 رجوع", callback_data='back_to_start')]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
             await update.message.reply_text(
-                f"👨‍🎓 **مرحباً {user.first_name}!**\n\n"
-                "**لوحة الطالب**\n\n"
-                "ماذا تريد أن تفعل؟",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
+                "👨‍🎓 **وضع الطالب**\n\n"
+                "مميزات الطالب:\n"
+                "1. 📝 رؤية الاختبارات المتاحة\n"
+                "2. 🧑‍🎓 أداء الاختبارات\n"
+                "3. 🏆 رؤية النتائج\n\n"
+                "🚀 سيتم تفعيل هذه المميزات قريباً!"
             )
         
-        # أمر /help
+        # دالة /help
         async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            help_text = """
-🆘 **مركز المساعدة**
-
-**👨‍🏫 للمدرسين:**
-• /teacher - دخول وضع المدرس
-• إنشاء اختبارات جديدة
-• متابعة نتائج الطلاب
-
-**👨‍🎓 للطلاب:**
-• /student - دخول وضع الطالب
-• أداء الاختبارات المتاحة
-• رؤية النتائج السابقة
-
-**📞 للأوامر:**
-• /start - بدء البوت
-• /help - هذه الرسالة
-
-🚀 **ابدأ الآن بإرسال /teacher أو /student**
-            """
-            await update.message.reply_text(help_text, parse_mode='Markdown')
+            await update.message.reply_text(
+                "🆘 **مساعدة البوت**\n\n"
+                "• /start - بدء البوت\n"
+                "• /teacher - دخول وضع المدرس\n"
+                "• /student - دخول وضع الطالب\n"
+                "• /help - هذه الرسالة\n\n"
+                "📞 للمساعدة: @مالك"
+            )
         
-        # معالجة أزرار callback
-        async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            query = update.callback_query
-            await query.answer()
+        # تشغيل البوت
+        async def run_bot():
+            application = Application.builder().token(token).build()
+            application.add_handler(CommandHandler("start", start_command))
+            application.add_handler(CommandHandler("teacher", teacher_command))
+            application.add_handler(CommandHandler("student", student_command))
+            application.add_handler(CommandHandler("help", help_command))
             
-            if query.data == 'teacher_mode':
-                await query.edit_message_text(
-                    "👨‍🏫 **تم تحديد وضع المدرس**\n\n"
-                    "يمكنك الآن:\n"
-                    "• إنشاء اختبارات جديدة\n"
-                    "• إدارة اختباراتك\n"
-                    "• رؤية نتائج الطلاب\n\n"
-                    "🚀 أرسل /teacher للبدء"
-                )
-            elif query.data == 'student_mode':
-                await query.edit_message_text(
-                    "👨‍🎓 **تم تحديد وضع الطالب**\n\n"
-                    "يمكنك الآن:\n"
-                    "• رؤية الاختبارات المتاحة\n"
-                    "• أداء الاختبارات\n"
-                    "• رؤية نتائجك\n\n"
-                    "🚀 أرسل /student للبدء"
-                )
-            elif query.data == 'help_info':
-                await query.edit_message_text(
-                    "❓ **المساعدة السريعة**\n\n"
-                    "1. للمدرسين: أرسل /teacher\n"
-                    "2. للطلاب: أرسل /student\n"
-                    "3. للمساعدة التفصيلية: /help\n\n"
-                    "🎯 جرب الآن!"
-                )
-            elif query.data == 'back_to_start':
-                await start_command(query, context)
+            print("✅ بوت Telegram جاهز!")
+            print("📞 الأوامر: /start, /teacher, /student, /help")
+            
+            await application.initialize()
+            await application.start()
+            await application.updater.start_polling()
+            
+            # إبقاء البوت يعمل
+            print("🎉 بوت Telegram يعمل بنجاح!")
+            await asyncio.Event().wait()
         
-        # ========== إنشاء وتشغيل البوت ==========
-        print("🔧 جاري إنشاء تطبيق البوت...")
-        application = Application.builder().token(token).build()
-        
-        # إضافة جميع handlers
-        application.add_handler(CommandHandler("start", start_command))
-        application.add_handler(CommandHandler("teacher", teacher_command))
-        application.add_handler(CommandHandler("student", student_command))
-        application.add_handler(CommandHandler("help", help_command))
-        application.add_handler(CallbackQueryHandler(button_handler))
-        
-        print("✅ جميع الأوامر مضافَة!")
-        print("📋 الأوامر المتاحة: /start, /teacher, /student, /help")
-        
-        # بدء البوت
-        print("🚀 بدء تشغيل البوت...")
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling()
-        
-        print("🎉 بوت Telegram يعمل بنجاح!")
-        print("👉 جرب الأوامر: /teacher أو /student")
-        
-        # إبقاء البوت يعمل
-        await asyncio.Event().wait()
+        # تشغيل في loop جديد
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(run_bot())
         
     except ImportError as e:
-        print(f"❌ مكتبة ناقصة: {e}")
-        print("📦 قم بتثبيت: pip install python-telegram-bot")
+        print(f"❌ لا تزال المكتبات ناقصة: {e}")
+        print("🔄 إعادة محاولة التثبيت...")
+        time.sleep(5)
+        if install_telegram_bot():
+            start_telegram_bot()  # إعادة المحاولة
     except Exception as e:
         print(f"❌ خطأ في البوت: {e}")
-
-def run_telegram_bot():
-    """تشغيل البوت في loop منفصل"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(run_telegram_bot_async())
-    except Exception as e:
-        print(f"❌ فشل تشغيل البوت: {e}")
-    finally:
-        loop.close()
 
 # ========== صفحات الويب ==========
 @app.route('/')
@@ -191,76 +135,76 @@ def home():
 <html dir="rtl">
 <head><meta charset="UTF-8"><title>بوت الاختبارات</title>
 <style>
-body{font-family:Arial; padding:50px; text-align:center; background:linear-gradient(135deg,#667eea,#764ba2); color:white;}
-.container{max-width:700px; margin:0 auto; background:rgba(255,255,255,0.95); padding:40px; border-radius:20px; color:#333; box-shadow:0 20px 40px rgba(0,0,0,0.2);}
+body{font-family:Arial; padding:40px; text-align:center; background:#f0f8ff;}
+.container{max-width:700px; margin:0 auto; background:white; padding:40px; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.1);}
 h1{color:#2c3e50;}
-.card{background:#f8f9fa; padding:20px; margin:20px 0; border-radius:10px; border-right:5px solid #28a745;}
-.command{background:#e7f3ff; padding:10px; margin:5px; border-radius:5px; display:inline-block;}
-.btn{padding:12px 25px; margin:10px; background:#28a745; color:white; text-decoration:none; border-radius:8px; font-weight:bold; display:inline-block;}
-.telegram{background:#0088cc;}
+.status-box{padding:20px; margin:20px 0; border-radius:10px; font-weight:bold; font-size:1.2em;}
+.installing{background:#ffc107; color:#856404;}
+.ready{background:#28a745; color:white;}
+.command{display:inline-block; background:#e7f3ff; padding:10px 20px; margin:8px; border-radius:8px; font-family:monospace;}
+.btn{padding:15px 30px; margin:15px; background:#0088cc; color:white; text-decoration:none; border-radius:10px; font-weight:bold; display:inline-block;}
 </style></head>
 <body>
 <div class="container">
     <h1>🤖 بوت الاختبارات التعليمية</h1>
     
-    <div class="card">
-        <h2>✅ البوت يعمل بنجاح!</h2>
-        <p><strong>البوت:</strong> @banktest22bot</p>
-        <p><strong>الحالة:</strong> نشط وجاهز</p>
+    <div class="status-box installing">
+        🔄 <strong>جاري تثبيت مكتبات البوت...</strong>
     </div>
     
-    <div class="card">
-        <h3>📋 الأوامر المتاحة:</h3>
-        <div class="command"><code>/start</code> - بدء البوت</div>
-        <div class="command"><code>/teacher</code> - وضع المدرس</div>
-        <div class="command"><code>/student</code> - وضع الطالب</div>
-        <div class="command"><code>/help</code> - المساعدة</div>
-    </div>
+    <p>يتم الآن تثبيت مكتبة python-telegram-bot تلقائياً</p>
     
-    <div class="card">
-        <h3>🚀 جرب الآن على Telegram:</h3>
-        <p>1. افتح @banktest22bot</p>
-        <p>2. أرسل <code>/teacher</code> أو <code>/student</code></p>
-        <p>3. شاهد القائمة التفاعلية</p>
-    </div>
+    <h3>📋 الأوامر المتاحة بعد التثبيت:</h3>
+    <div class="command">/start</div>
+    <div class="command">/teacher</div>
+    <div class="command">/student</div>
+    <div class="command">/help</div>
     
-    <div>
-        <a href="https://t.me/banktest22bot" class="btn telegram" target="_blank">
-            📲 افتح البوت الآن
+    <div style="margin:30px 0;">
+        <a href="https://t.me/banktest22bot" class="btn" target="_blank">
+            📲 افتح البوت على Telegram
         </a>
-        <a href="/status" class="btn">
-            📊 حالة النظام
+        <a href="/check-status" class="btn" style="background:#28a745;">
+            🔍 تحقق من الحالة
         </a>
+    </div>
+    
+    <div style="background:#f8f9fa; padding:20px; border-radius:10px; margin-top:30px;">
+        <p><strong>⏱ المعلومة:</strong> قد يستغرق التثبيت 30-60 ثانية</p>
+        <p>بعدها سيعمل البوت تلقائياً</p>
     </div>
 </div>
 </body>
 </html>
     """
 
-@app.route('/status')
-def status():
-    token = os.getenv('BOT_TOKEN')
+@app.route('/check-status')
+def check_status():
+    """صفحة التحقق من حالة المكتبات"""
+    try:
+        import telegram
+        lib_status = "✅ مثبتة"
+    except ImportError:
+        lib_status = "❌ غير مثبتة"
+    
     return jsonify({
-        "status": "running",
+        "telegram_library": lib_status,
         "bot": "@banktest22bot",
-        "commands": ["/start", "/teacher", "/student", "/help"],
-        "message": "جرب الأوامر على Telegram!"
+        "service": "running",
+        "message": "جاري التثبيت التلقائي للمكتبات"
     })
 
 # ========== بدء التشغيل ==========
 if __name__ == '__main__':
-    print("🚀 بدء تشغيل نظام البوت...")
+    print("🚀 بدء تشغيل تطبيق البوت...")
     print(f"🔗 الرابط: https://quiz-bot-final-q6sq.onrender.com")
     print(f"🤖 البوت: @banktest22bot")
-    print("📋 الأوامر: /start, /teacher, /student, /help")
     
     # بدء بوت Telegram في thread منفصل
-    try:
-        bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-        bot_thread.start()
-        print("✅ بدأ بوت Telegram في الخلفية")
-    except Exception as e:
-        print(f"⚠️ لم يبدأ البوت: {e}")
+    import threading
+    bot_thread = threading.Thread(target=start_telegram_bot, daemon=True)
+    bot_thread.start()
+    print("✅ بدأ thread البوت (سيحاول تثبيت المكتبات تلقائياً)")
     
     # بدء خادم Flask
     port = int(os.environ.get('PORT', 10000))
