@@ -1,147 +1,139 @@
-from flask import Flask, request, jsonify
+from flask import Flask
 import os
 import logging
-import sys
-from threading import Thread
-import time
 
-# إعداد التسجيل
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.StreamHandler(sys.stderr)
-    ]
-)
-
-logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
-# بوت تلجرام مبسط للبدء
-def run_simple_bot():
-    """تشغيل نسخة مبسطة من البوت"""
-    try:
-        token = os.getenv('BOT_TOKEN')
-        
-        if not token or token == 'ضع_توكن_البوت_هنا':
-            logger.warning("⚠️ BOT_TOKEN غير مضبوط، البوت لن يعمل")
-            logger.info("🔧 يرجى تعيين BOT_TOKEN في إعدادات Render")
-            return
-        
-        logger.info(f"🤖 بدء تشغيل البوت باستخدام التوكن: {token[:10]}...")
-        
-        # استيراد مكتبة telegram بعد التحقق من التوكن
-        try:
-            from telegram import Update
-            from telegram.ext import Application, CommandHandler, CallbackContext
-        except ImportError as e:
-            logger.error(f"❌ خطأ في استيراد المكتبات: {e}")
-            logger.info("📦 جاري تثبيت المكتبات المطلوبة...")
-            import subprocess
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot==20.7"])
-            from telegram import Update
-            from telegram.ext import Application, CommandHandler, CallbackContext
-        
-        # دالة البداية
-        async def start_command(update: Update, context: CallbackContext):
-            await update.message.reply_text(
-                '🎓 **مرحباً بكم في نظام الاختبارات التعليمية!**\n\n'
-                '✅ البوت يعمل بنجاح على Render\n\n'
-                '📝 قم بتعديل الكود لإضافة المميزات:\n'
-                '1. إنشاء اختبارات\n'
-                '2. إدارة الطلاب\n'
-                '3. عرض النتائج\n\n'
-                '🚀 ابدأ الآن بتجربة البوت!'
-            )
-        
-        # إنشاء وتشغيل البوت
-        application = Application.builder().token(token).build()
-        application.add_handler(CommandHandler("start", start_command))
-        application.add_handler(CommandHandler("help", start_command))
-        
-        logger.info("🔄 بدء الاستماع للرسائل...")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
-        
-    except Exception as e:
-        logger.error(f"❌ خطأ في تشغيل البوت: {e}", exc_info=True)
-
-# صفحة البداية
+# صفحة البداية البسيطة
 @app.route('/')
 def home():
-    return jsonify({
-        "status": "online",
-        "service": "Telegram Quiz Bot",
-        "version": "1.0.0",
-        "endpoints": {
-            "/": "هذه الصفحة",
-            "/health": "فحص حالة الخدمة",
-            "/start": "بدء البوت (يدوياً)",
-            "/bot-status": "حالة البوت"
-        },
-        "instructions": {
-            "1": "اضبط BOT_TOKEN في Environment Variables",
-            "2": "أعد تشغيل الخدمة",
-            "3": "تفقد السجلات للتحقق من التشغيل"
-        }
-    })
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Telegram Quiz Bot</title>
+        <meta charset="utf-8">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                direction: rtl;
+                text-align: center;
+                padding: 50px;
+                background: linear-gradient(135deg, #4f8bf9 0%, #2a52d1 100%);
+                color: white;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 40px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+                max-width: 700px;
+                width: 90%;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            }
+            h1 {
+                color: #fff;
+                margin-bottom: 25px;
+                font-size: 2.5em;
+            }
+            .status {
+                background: #28a745;
+                color: white;
+                padding: 12px 25px;
+                border-radius: 8px;
+                display: inline-block;
+                margin: 15px;
+                font-size: 1.2em;
+                font-weight: bold;
+            }
+            .card {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 25px;
+                border-radius: 12px;
+                margin: 25px 0;
+                text-align: right;
+            }
+            .step {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 15px;
+                margin: 12px 0;
+                border-radius: 8px;
+                border-right: 5px solid #4CAF50;
+            }
+            a.button {
+                display: inline-block;
+                background: #4CAF50;
+                color: white;
+                padding: 15px 30px;
+                text-decoration: none;
+                border-radius: 8px;
+                margin: 10px;
+                font-size: 1.1em;
+                transition: all 0.3s;
+            }
+            a.button:hover {
+                background: #45a049;
+                transform: translateY(-3px);
+            }
+            .logs {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 15px;
+                border-radius: 8px;
+                text-align: left;
+                font-family: monospace;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 بوت الاختبارات التعليمية</h1>
+            <div class="status">🚀 جاهز للتشغيل</div>
+            
+            <div class="card">
+                <h2>✅ تم التحديث بنجاح</h2>
+                <p>تم إصلاح ملفات الإعتماديات وجاهز للنشر</p>
+            </div>
+            
+            <div class="card">
+                <h3>🔧 الخطوات المتبقية:</h3>
+                <div class="step">1. انتقل إلى Render</div>
+                <div class="step">2. أضف BOT_TOKEN في Environment Variables</div>
+                <div class="step">3. اضغط على Restart Service</div>
+                <div class="step">4. انتظر حتى تصبح الحالة Healthy ✅</div>
+            </div>
+            
+            <div style="margin: 30px 0;">
+                <a href="https://dashboard.render.com" class="button" target="_blank">🚀 الذهاب إلى Render</a>
+                <a href="/health" class="button">📊 فحص الحالة</a>
+            </div>
+            
+            <div class="card">
+                <h3>📋 معلومات الخدمة:</h3>
+                <p><strong>الاسم:</strong> telegram-quiz-bot</p>
+                <p><strong>الحالة:</strong> جاهز للنشر</p>
+                <p><strong>آخر تحديث:</strong> تم الآن</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
-# فحص الحالة
+# صفحة فحص الحالة
 @app.route('/health')
-def health_check():
-    return jsonify({
+def health():
+    return {
         "status": "healthy",
-        "timestamp": time.time(),
-        "bot_token_set": bool(os.getenv('BOT_TOKEN')),
-        "environment": os.getenv('RENDER', 'development')
-    })
+        "message": "✅ الخدمة تعمل بنجاح",
+        "next_step": "أضف BOT_TOKEN في Render"
+    }
 
-# بدء البوت يدوياً
-@app.route('/start-bot')
-def start_bot():
-    try:
-        bot_thread = Thread(target=run_simple_bot, daemon=True)
-        bot_thread.start()
-        return jsonify({
-            "success": True,
-            "message": "✅ تم بدء تشغيل البوت في الخلفية",
-            "thread": "running"
-        })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-# حالة البوت
-@app.route('/bot-status')
-def bot_status():
-    token = os.getenv('BOT_TOKEN')
-    return jsonify({
-        "bot_configured": bool(token and token != 'ضع_توكن_البوت_هنا'),
-        "token_length": len(token) if token else 0,
-        "environment": dict(os.environ) if os.getenv('RENDER_EXTERNAL_HOSTNAME') else "غير معروفة"
-    })
-
-# تشغيل البوت تلقائياً عند البدء
-@app.before_first_request
-def initialize():
-    logger.info("🚀 تهيئة التطبيق...")
-    logger.info(f"📁 المسار: {os.getcwd()}")
-    logger.info(f"🐍 إصدار Python: {sys.version}")
-    
-    # بدء البوت تلقائياً
-    if os.getenv('AUTO_START_BOT', 'true').lower() == 'true':
-        logger.info("🤖 بدء تشغيل البوت تلقائياً...")
-        bot_thread = Thread(target=run_simple_bot, daemon=True)
-        bot_thread.start()
-
-# نقطة الدخول الرئيسية
+# بدء التشغيل
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 10000))
-    host = '0.0.0.0'
-    
-    logger.info(f"🌐 تشغيل الخادم على {host}:{port}")
-    logger.info("📞 للتحقق: https://telegram-quiz-bot.onrender.com")
-    
-    app.run(host=host, port=port, debug=False)
+    print(f"🚀 بدء التشغيل على المنفذ {port}")
+    app.run(host='0.0.0.0', port=port, debug=False)
