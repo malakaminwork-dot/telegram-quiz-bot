@@ -1,154 +1,189 @@
 from flask import Flask, jsonify
 import os
-import threading
-import time
-import asyncio
+import subprocess
 import sys
+import time
 
 app = Flask(__name__)
 
-# ========== صفحة البداية ==========
+# ========== تثبيت المكتبات المطلوبة أولاً ==========
+def install_requirements():
+    """تثبيت المكتبات المطلوبة إذا كانت ناقصة"""
+    print("📦 فحص المكتبات المطلوبة...")
+    
+    # قائمة المكتبات الأساسية
+    requirements = [
+        "python-telegram-bot==20.7",
+        "Flask==2.3.2", 
+        "requests==2.31.0"
+    ]
+    
+    for package in requirements:
+        try:
+            # حاول استيراد المكتبة
+            if "telegram" in package:
+                import telegram
+                print(f"✅ {package} مثبتة")
+            elif "Flask" in package:
+                import flask
+                print(f"✅ {package} مثبتة")
+            elif "requests" in package:
+                import requests
+                print(f"✅ {package} مثبتة")
+        except ImportError:
+            # تثبيت المكتبة إذا كانت ناقصة
+            print(f"📥 جاري تثبيت {package}...")
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                print(f"✅ تم تثبيت {package}")
+            except:
+                print(f"❌ فشل تثبيت {package}")
+
+# ========== تشغيل البوت ==========
+def start_telegram_bot():
+    """بدء بوت تلجرام بعد تثبيت المكتبات"""
+    print("🤖 محاولة تشغيل بوت تلجرام...")
+    time.sleep(2)  # انتظار للتثبيت
+    
+    try:
+        # استيراد المكتبات بعد التثبيت
+        from telegram import Update
+        from telegram.ext import Application, CommandHandler, ContextTypes
+        import asyncio
+        
+        token = os.getenv('BOT_TOKEN')
+        if not token:
+            print("❌ BOT_TOKEN غير مضبوط!")
+            return
+        
+        print(f"✅ التوكن: {token[:10]}...")
+        
+        # اختبار التوكن
+        import requests
+        test = requests.get(f'https://api.telegram.org/bot{token}/getMe', timeout=5)
+        if not test.json().get('ok'):
+            print(f"❌ التوكن خاطئ: {test.json()}")
+            return
+        
+        print("✅ التوكن صحيح!")
+        
+        # دالة الرد
+        async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+            user = update.effective_user
+            await update.message.reply_text(
+                f"🎉 **أهلاً {user.first_name}!**\n\n"
+                "✅ **بوت الاختبارات التعليمية يعمل الآن!**\n\n"
+                "مميزات البوت:\n"
+                "• 📝 إنشاء اختبارات\n"
+                "• 🧑‍🎓 أداء الاختبارات\n"
+                "• 📊 عرض النتائج\n\n"
+                "🚀 ابدأ تجربتك الآن!"
+            )
+        
+        # تشغيل البوت
+        async def run_bot():
+            application = Application.builder().token(token).build()
+            application.add_handler(CommandHandler("start", start_command))
+            application.add_handler(CommandHandler("help", start_command))
+            
+            print("✅ بوت تلجرام جاهز للتشغيل!")
+            print(f"📞 أرسل /start إلى @banktest22bot")
+            
+            await application.initialize()
+            await application.start()
+            await application.updater.start_polling()
+            
+            # إبقاء البوت يعمل
+            print("🎯 بوت تلجرام يعمل بنجاح!")
+            await asyncio.Event().wait()
+        
+        # تشغيل في loop جديد
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(run_bot())
+        
+    except ImportError as e:
+        print(f"❌ مكتبة ناقصة: {e}")
+        install_requirements()
+        # حاول مرة أخرى بعد التثبيت
+        time.sleep(3)
+        start_telegram_bot()
+    except Exception as e:
+        print(f"❌ خطأ: {e}")
+
+# ========== صفحات الويب ==========
 @app.route('/')
 def home():
     return """
     <!DOCTYPE html>
 <html dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>بوت الاختبارات - التشغيل الآن ✅</title>
-    <style>
-        body { font-family: Arial; padding: 40px; text-align: center; background: #f0f8ff; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .status { padding: 20px; margin: 20px 0; border-radius: 10px; font-size: 1.2em; }
-        .green { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
-        .blue { background: #d1ecf1; color: #0c5460; border: 2px solid #bee5eb; }
-        .btn { display: inline-block; padding: 12px 30px; margin: 15px; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
-        .telegram { background: #0088cc; }
-        code { background: #f8f9fa; padding: 3px 8px; border-radius: 4px; }
-    </style>
-</head>
+<head><meta charset="UTF-8"><title>بوت الاختبارات</title>
+<style>
+body{font-family:Arial; padding:40px; text-align:center; background:#f8f9fa;}
+.container{max-width:600px; margin:0 auto; background:white; padding:30px; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+.status{padding:15px; margin:15px 0; border-radius:8px; font-weight:bold;}
+.success{background:#d4edda; color:#155724; border:2px solid #c3e6cb;}
+.step{background:#e7f3ff; padding:10px; margin:8px 0; border-radius:5px; border-right:4px solid #007bff;}
+.btn{display:inline-block; padding:12px 25px; margin:10px; background:#28a745; color:white; text-decoration:none; border-radius:8px; font-weight:bold;}
+.telegram{background:#0088cc;}
+</style></head>
 <body>
-    <div class="container">
-        <h1>🤖 بوت الاختبارات - الإصدار النهائي</h1>
-        
-        <div class="status green">
-            ✅ <strong>الخدمة تعمل - جاري تشغيل البوت...</strong>
-        </div>
-        
-        <div class="status blue">
-            <p>📋 <strong>التشخيص:</strong> تم إصلاح خطأ التشغيل</p>
-            <p>🤖 <strong>البوت:</strong> @banktest22bot</p>
-            <p>🔗 <strong>الرابط:</strong> quiz-bot-final-q6sq.onrender.com</p>
-        </div>
-        
-        <h3>🚀 جرب الآن:</h3>
-        <ol style="text-align: right; margin: 20px auto; width: 300px;">
-            <li>افتح Telegram</li>
-            <li>ابحث عن <code>@banktest22bot</code></li>
-            <li>اضغط <strong>Start</strong></li>
-            <li>أرسل <code>/start</code></li>
-        </ol>
-        
-        <div>
-            <a href="https://t.me/banktest22bot" class="btn telegram" target="_blank">
-                📲 افتح البوت على Telegram
-            </a>
-            <a href="/test" class="btn">
-                🔍 اختبر البوت
-            </a>
-        </div>
-        
-        <p style="margin-top: 30px; color: #666; font-size: 0.9em;">
-            ⏱ قد يستغرق البوت 30 ثانية بعد النشر ليصبح جاهزاً.
-        </p>
+<div class="container">
+    <h1>🤖 بوت الاختبارات التعليمية</h1>
+    
+    <div class="status success">
+        ✅ <strong>جاري تشغيل البوت...</strong>
     </div>
+    
+    <h3>🚀 الخطوات التلقائية:</h3>
+    <div class="step">1. فحص المكتبات المطلوبة</div>
+    <div class="step">2. تثبيت المكتبات الناقصة</div>
+    <div class="step">3. بدء بوت تلجرام</div>
+    <div class="step">4. البوت جاهز على @banktest22bot</div>
+    
+    <div style="margin:30px 0;">
+        <a href="https://t.me/banktest22bot" class="btn telegram" target="_blank">
+            📲 افتح البوت الآن
+        </a>
+        <a href="/status" class="btn">
+            📊 حالة النظام
+        </a>
+    </div>
+    
+    <p style="color:#666; margin-top:20px;">
+        ⏱ يرجى الانتظار 30-60 ثانية بعد النشر ليبدأ البوت بالكامل
+    </p>
+</div>
 </body>
 </html>
     """
 
-@app.route('/test')
-def test():
-    """صفحة اختبار بسيطة"""
+@app.route('/status')
+def status():
     token = os.getenv('BOT_TOKEN')
     return jsonify({
-        "status": "running",
-        "bot_token": "✅ مضبوط" if token else "❌ غير مضبوط",
-        "bot_username": "@banktest22bot",
-        "message": "البوت يعمل الآن! جرب /start"
+        "service": "running",
+        "bot_configured": bool(token),
+        "bot": "@banktest22bot",
+        "message": "جاري تشغيل البوت تلقائياً..."
     })
 
-# ========== تشغيل بوت Telegram بشكل صحيح ==========
-async def run_bot_async():
-    """تشغيل البوت باستخدام asyncio"""
-    try:
-        print("🔧 جاري استيراد مكتبات بوت Telegram...")
-        from telegram import Update
-        from telegram.ext import Application, CommandHandler, ContextTypes
-        
-        token = os.getenv('BOT_TOKEN')
-        if not token:
-            print("❌ BOT_TOKEN غير مضبوط")
-            return
-        
-        print(f"✅ التوكن: {token[:10]}...")
-        
-        # دالة الرد على /start
-        async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            await update.message.reply_text(
-                "🎊 **أهلاً وسهلاً!**\n\n"
-                "✅ بوت الاختبارات التعليمية يعمل بنجاح!\n\n"
-                "✨ يمكنك الآن:\n"
-                "• إنشاء الاختبارات\n• إجراء الاختبارات\n• عرض النتائج\n\n"
-                "🚀 ابدأ رحلتك التعليمية!"
-            )
-        
-        # إنشاء التطبيق
-        print("🤖 جاري إنشاء تطبيق البوت...")
-        application = Application.builder().token(token).build()
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("help", start))
-        
-        print("✅ البوت جاهز! جاري التشغيل...")
-        print("📞 أرسل /start إلى @banktest22bot")
-        
-        # تشغيل البوت (هذه المرة بشكل صحيح)
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling()
-        
-        # إبقاء البوت يعمل
-        print("🎯 بوت Telegram يعمل الآن بنجاح!")
-        await asyncio.Event().wait()  # يبقى البوت يعمل للأبد
-        
-    except Exception as e:
-        print(f"❌ خطأ: {e}")
-
-def run_bot():
-    """تشغيل البوت في loop منفصل"""
-    print("🚀 بدء تشغيل بوت Telegram...")
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(run_bot_async())
-    except Exception as e:
-        print(f"❌ فشل تشغيل البوت: {e}")
-    finally:
-        loop.close()
-
-# بدء البوت عند تشغيل التطبيق
-if os.getenv('BOT_TOKEN'):
-    print("🔑 تم العثور على BOT_TOKEN، جاري بدء البوت...")
-    bot_thread = threading.Thread(target=run_bot, daemon=True)
-    bot_thread.start()
-    print("✅ بدأ thread البوت في الخلفية")
-else:
-    print("⚠️ BOT_TOKEN غير مضبوط، البوت لن يعمل")
-
-# ========== بدء خادم Flask ==========
+# ========== بدء التشغيل ==========
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 10000))
-    print(f"🌐 بدء خادم الويب على المنفذ {port}")
+    print("🚀 بدء تشغيل تطبيق البوت...")
     print(f"🔗 الرابط: https://quiz-bot-final-q6sq.onrender.com")
     print(f"🤖 البوت: @banktest22bot")
-    print("⏳ يرجى الانتظار 30 ثانية حتى يبدأ البوت...")
+    
+    # تثبيت المكتبات أولاً
+    install_requirements()
+    
+    # بدء بوت تلجرام في thread منفصل
+    import threading
+    bot_thread = threading.Thread(target=start_telegram_bot, daemon=True)
+    bot_thread.start()
+    print("✅ بدأ تشغيل بوت تلجرام في الخلفية")
+    
+    # بدء خادم Flask
+    port = int(os.getenv('PORT', 10000))
+    print(f"🌐 بدء خادم الويب على المنفذ {port}")
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
