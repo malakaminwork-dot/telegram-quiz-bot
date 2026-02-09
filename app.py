@@ -4,7 +4,6 @@ import sys
 import subprocess
 import time
 import threading
-import asyncio
 
 app = Flask(__name__)
 
@@ -225,27 +224,12 @@ def start_telegram_bot():
             application.add_handler(CallbackQueryHandler(button_handler))
             
             print("✅ تم إضافة جميع الأوامر وال handlers!")
+            print("📡 جاري بدء تشغيل البوت...")
             
-            # تشغيل البوت
-            print("📡 جاري بدء استماع البوت للرسائل...")
-            await application.initialize()
-            await application.start()
-            await application.updater.start_polling()
+            # تشغيل البوت بشكل صحيح - هذه هي السطر المهم!
+            application.run_polling()
             
-            print("=" * 60)
-            print("🎉 **بوت Telegram يعمل بنجاح!**")
-            print(f"🤖 اسم البوت: @banktest22bot")
-            print("📞 الأوامر النشطة:")
-            print("  • /start - القائمة الرئيسية")
-            print("  • /teacher - وضع المدرس")
-            print("  • /student - وضع الطالب")
-            print("  • /help - المساعدة")
-            print("=" * 60)
-            
-            # إبقاء البوت يعمل للأبد
-            print("⏳ البوت يعمل ويستمع للرسائل الآن...")
-            await asyncio.Event().wait()  # هذا يبقي البرنامج يعمل إلى الأبد
-            
+            print("🎉 بوت Telegram بدأ بنجاح!")
             return  # إذا وصل هنا، يعني نجح
             
         except ImportError as e:
@@ -267,7 +251,7 @@ def start_telegram_bot():
                 print("❌ فشل تشغيل البوت بعد جميع المحاولات")
                 break
     
-    print("⚠️ بوت Telegram لم يبدأ بنجاح. تحقق من التوكن والمكتبات.")
+    print("⚠️ بوت Telegram لم يبدأ بنجاح.")
 
 # ========== صفحات الويب ==========
 @app.route('/')
